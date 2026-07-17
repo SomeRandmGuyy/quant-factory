@@ -20,6 +20,7 @@ from quant_lab.models.market_data import MarketData
 from quant_lab.models.signal import Signal, SignalAction
 from quant_lab.portfolio.portfolio import Portfolio
 from quant_lab.strategies.protocols import StrategyConfig
+from quant_lab.portfolio.sizing import size_by_percent
 
 
 class TrendFollowingConfig(StrategyConfig):
@@ -197,14 +198,17 @@ class TrendFollowingStrategy:
             # Require minimum score to enter
             if buy_score >= 0.6:
                 confidence = min(buy_score, 1.0)
-                target_value = portfolio.total_value * Decimal(str(self.config.max_position_size))
-                quantity = int(target_value / Decimal(str(indicators["current_price"])))
-                
+                quantity = size_by_percent(
+                    portfolio.total_value,
+                    Decimal(str(indicators["current_price"])),
+                    self.config.max_position_size,
+                )
+
                 if quantity > 0:
                     return Signal(
                         ticker=ticker,
                         action=SignalAction.BUY,
-                        quantity=Decimal(str(quantity)),
+                        quantity=quantity,
                         confidence=confidence,
                         reasoning=", ".join(reasons),
                         metadata={

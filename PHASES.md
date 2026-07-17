@@ -138,8 +138,8 @@ pytest packages/core/tests/unit/test_portfolio_buy_sell.py -q
 
 #### Done when
 
-- [ ] `pytest packages/core/tests/unit/test_portfolio_buy_sell.py` passes
-- [ ] CI or local script documents the command
+- [x] `pytest packages/core/tests/unit/test_portfolio_buy_sell.py` passes
+- [x] CI or local script documents the command
 
 ---
 
@@ -239,8 +239,8 @@ In routes, prefer `json.dumps(data, default=str)` as belt-and-suspenders.
 
 #### Done when
 
-- [ ] SSE stream ends with `stage: complete` without error events
-- [ ] Equity curve dates are ISO strings
+- [x] SSE stream ends with `stage: complete` without error events
+- [x] Equity curve dates are ISO strings
 
 ---
 
@@ -1129,12 +1129,13 @@ When completing a phase step, update:
 # Suggested implementation order (checklist for agents)
 
 ```text
-[ ] 0.1 Portfolio unit tests
-[ ] 0.2 API health/strategies tests
-[ ] 0.3 SSE JSON-safe backtest test
-[ ] 0.4 Frontend contract alignment (manual + types)
-[ ] 0.5 Yahoo provider flag + network-marked tests
-[ ] 0.6 Fractional sizing module + strategy migration
+[x] 0.1 Portfolio unit tests
+[x] 0.2 API health/strategies tests
+[x] 0.3 SSE JSON-safe backtest test
+[x] 0.4 Frontend contract alignment (manual + types)
+[x] 0.5 Yahoo provider flag + network-marked tests
+[x] 0.6 Fractional sizing module + strategy migration
+[x] 0.7 CI workflow + docs
 [ ] 1.1 Per-trade PnL
 [ ] 1.2 Cost model
 [ ] 1.3 Benchmark excess return

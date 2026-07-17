@@ -19,6 +19,7 @@ from quant_lab.models.market_data import MarketData, Fundamentals
 from quant_lab.models.signal import Signal, SignalAction
 from quant_lab.portfolio.portfolio import Portfolio
 from quant_lab.strategies.protocols import StrategyConfig
+from quant_lab.portfolio.sizing import size_by_percent
 
 
 class ValueMoatConfig(StrategyConfig):
@@ -188,14 +189,17 @@ class ValueMoatStrategy:
         if combined_score >= 0.6 and position is None:
             # Calculate position size based on confidence
             confidence = combined_score
-            target_value = portfolio.total_value * Decimal(str(self.config.max_position_size))
-            quantity = int(target_value / current_price)
-            
+            quantity = size_by_percent(
+                portfolio.total_value,
+                current_price,
+                self.config.max_position_size,
+            )
+
             if quantity > 0:
                 return Signal(
                     ticker=ticker,
                     action=SignalAction.BUY,
-                    quantity=Decimal(str(quantity)),
+                    quantity=quantity,
                     confidence=confidence,
                     reasoning=f"Quality Score: {quality_score:.2f}, Valuation Score: {valuation_score:.2f}",
                     metadata={

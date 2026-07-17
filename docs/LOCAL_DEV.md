@@ -44,3 +44,26 @@ tail -f /tmp/quant-factory-api.log /tmp/quant-factory-web.log
 - Port **8000** is occupied on this host; use **8001**.
 - Trend Following may produce **zero trades** on short synthetic data (needs golden cross). Try **Value Moat** or **Multi-Factor** for activity.
 - Do not commit `.env` or API keys.
+
+
+## Data providers
+
+Backtest body field `provider`:
+
+- `csv` (default) — reads `CSV_DATA_DIR`
+- `yahoo` — live Yahoo Finance (network)
+
+```bash
+curl -N -X POST http://127.0.0.1:8001/api/backtest/run \
+  -H 'Content-Type: application/json' \
+  -d '{"strategy_name":"value_moat","tickers":["AAPL","MSFT"],"start_date":"2024-01-02","end_date":"2024-06-28","initial_capital":100000,"provider":"csv"}'
+```
+
+## Tests
+
+```bash
+source .venv/bin/activate
+export PYTHONPATH=packages/core:packages/api
+pytest packages/core/tests packages/api/tests -q -m "not network"
+cd packages/web && npm test
+```

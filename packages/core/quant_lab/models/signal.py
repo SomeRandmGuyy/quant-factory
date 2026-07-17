@@ -34,7 +34,7 @@ class Signal(BaseModel):
         metadata: Additional strategy-specific data
     """
     
-    ticker: str = Field(..., min_length=1, max_length=10)
+    ticker: str = Field(..., min_length=1, max_length=32)
     action: SignalAction
     quantity: Decimal = Field(default=Decimal("0"), ge=0)
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)

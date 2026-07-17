@@ -30,7 +30,7 @@ class Position(BaseModel):
         current_price: Current market price per share
     """
     
-    ticker: str = Field(..., min_length=1, max_length=10)
+    ticker: str = Field(..., min_length=1, max_length=32)
     side: PositionSide
     quantity: Decimal = Field(gt=0)
     avg_price: Decimal = Field(gt=0)

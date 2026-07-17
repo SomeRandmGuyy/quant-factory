@@ -2,6 +2,8 @@
  * TypeScript types for Quant Factory API contracts.
  */
 
+export type DataProviderName = 'csv' | 'yahoo';
+
 export interface Strategy {
   id: string;
   name: string;
@@ -9,7 +11,6 @@ export interface Strategy {
 }
 
 export interface BacktestRequest {
-  /** Strategy registry key, e.g. value_moat, trend_following, multi_factor */
   strategy_name: string;
   tickers: string[];
   start_date: string;
@@ -18,6 +19,7 @@ export interface BacktestRequest {
   commission_bps?: number;
   slippage_bps?: number;
   rebalance_frequency?: number;
+  provider?: DataProviderName;
 }
 
 export interface BacktestResults {
@@ -32,7 +34,7 @@ export interface BacktestResults {
   max_drawdown: number;
   win_rate: number;
   num_trades: number;
-  metrics?: Record<string, number | string>;
+  metrics?: Record<string, number | string | null>;
   equity_curve?: Array<Record<string, unknown>>;
 }
 

@@ -35,7 +35,7 @@ class Trade(BaseModel):
         metadata: Additional trade-related data
     """
     
-    ticker: str = Field(..., min_length=1, max_length=10)
+    ticker: str = Field(..., min_length=1, max_length=32)
     action: TradeAction
     quantity: Decimal = Field(gt=0)
     price: Decimal = Field(gt=0)

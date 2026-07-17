@@ -22,6 +22,7 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
     start_date: '2024-01-01',
     end_date: '2024-06-30',
     initial_capital: 100000,
+    provider: 'csv' as 'csv' | 'yahoo',
   });
 
   // Load strategies on mount
@@ -117,6 +118,26 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
           />
         </div>
+      </div>
+
+
+      {/* Data provider */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Data Source
+        </label>
+        <select
+          value={formData.provider}
+          onChange={(e) => setFormData({ ...formData, provider: e.target.value as 'csv' | 'yahoo' })}
+          disabled={isRunning}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+        >
+          <option value="csv">Local CSV (offline)</option>
+          <option value="yahoo">Yahoo Finance (live)</option>
+        </select>
+        <p className="mt-1 text-sm text-gray-500">
+          CSV uses files under the server data directory. Yahoo requires network access.
+        </p>
       </div>
 
       {/* Initial Capital */}

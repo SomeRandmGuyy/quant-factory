@@ -61,11 +61,16 @@ line-length = 100
 target-version = "py311"
 
 [tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 testpaths = ["packages/core/tests", "packages/api/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "network: tests that require external network access",
+    "asyncio: async tests",
+]
 
 # =============================================================================
 # USAGE NOTES

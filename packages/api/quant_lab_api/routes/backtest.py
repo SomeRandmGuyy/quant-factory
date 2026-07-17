@@ -8,7 +8,7 @@ Endpoints:
 - DELETE /api/backtest/{id} - Delete a backtest
 """
 
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Literal
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -37,6 +37,7 @@ class BacktestRequest(BaseModel):
     commission_bps: float = Field(default=5.0, ge=0, description="Commission in basis points")
     slippage_bps: float = Field(default=2.0, ge=0, description="Slippage in basis points")
     rebalance_frequency: int = Field(default=5, gt=0, description="Days between rebalances")
+    provider: Literal["csv", "yahoo"] = Field(default="csv", description="Market data provider")
 
 
 class BacktestResponse(BaseModel):
@@ -104,6 +105,7 @@ async def run_backtest_streaming(
                         commission_bps=request.commission_bps,
                         slippage_bps=request.slippage_bps,
                         rebalance_frequency=request.rebalance_frequency,
+                        provider=request.provider,
                         progress_callback=progress_callback,
                     )
                     

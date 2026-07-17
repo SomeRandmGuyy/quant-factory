@@ -3,6 +3,7 @@
  */
 
 import type { Strategy, BacktestRequest, BacktestEvent, BacktestResults } from '../types';
+import { parseSseChunk } from './sse';
 
 const API_BASE_URL = '/api';
 
@@ -12,6 +13,26 @@ export async function fetchStrategies(): Promise<Strategy[]> {
     throw new Error('Failed to fetch strategies');
   }
   return response.json();
+}
+
+function mapCompleteResults(r: Record<string, unknown>): BacktestResults {
+  const metrics = (r.metrics || {}) as Record<string, number | null>;
+  const tradeHistory = (r.trade_history as unknown[]) || [];
+  return {
+    strategy_name: String(r.strategy_name ?? ''),
+    start_date: String(r.start_date ?? ''),
+    end_date: String(r.end_date ?? ''),
+    initial_capital: Number(r.initial_capital ?? 0),
+    final_value: Number(r.final_value ?? 0),
+    total_return: Number(metrics.total_return ?? 0) * 100,
+    sharpe_ratio: metrics.sharpe_ratio ?? null,
+    sortino_ratio: metrics.sortino_ratio ?? null,
+    max_drawdown: Number(metrics.max_drawdown ?? 0) * 100,
+    win_rate: Number(metrics.win_rate ?? 0) * 100,
+    num_trades: Number(metrics.num_trades ?? tradeHistory.length ?? 0),
+    metrics,
+    equity_curve: r.equity_curve as Array<Record<string, unknown>> | undefined,
+  };
 }
 
 /**
@@ -47,69 +68,46 @@ export async function runBacktest(
     buffer = chunks.pop() || '';
 
     for (const chunk of chunks) {
-      if (!chunk.trim()) continue;
+      const parsed = parseSseChunk(chunk);
+      if (!parsed) continue;
 
-      let eventType = 'message';
-      let dataLine = '';
-      for (const line of chunk.split('\n')) {
-        if (line.startsWith('event:')) {
-          eventType = line.slice(6).trim();
-        } else if (line.startsWith('data:')) {
-          dataLine = line.slice(5).trim();
-        }
+      const { eventType, data } = parsed;
+
+      if (eventType === 'error') {
+        const err =
+          typeof data === 'object' && data && 'error' in data
+            ? String((data as { error: string }).error)
+            : String(data);
+        onEvent({ type: 'error', data: err });
+        continue;
       }
-      if (!dataLine) continue;
 
-      try {
-        if (eventType === 'error') {
-          const parsed = JSON.parse(dataLine);
-          onEvent({ type: 'error', data: parsed.error || dataLine });
-          continue;
-        }
+      if (typeof data !== 'object' || data === null) continue;
+      const obj = data as Record<string, unknown>;
 
-        const parsed = JSON.parse(dataLine);
+      if (obj.error) {
+        onEvent({ type: 'error', data: String(obj.error) });
+        continue;
+      }
 
-        if (parsed.error) {
-          onEvent({ type: 'error', data: String(parsed.error) });
-          continue;
-        }
-
-        // Final payload: stage complete with results, or legacy complete event
-        if (parsed.stage === 'complete' && parsed.results) {
-          const r = parsed.results;
-          const metrics = r.metrics || {};
-          const results: BacktestResults = {
-            strategy_name: r.strategy_name,
-            start_date: r.start_date,
-            end_date: r.end_date,
-            initial_capital: r.initial_capital,
-            final_value: r.final_value,
-            total_return: (metrics.total_return ?? 0) * 100,
-            sharpe_ratio: metrics.sharpe_ratio ?? null,
-            sortino_ratio: metrics.sortino_ratio ?? null,
-            max_drawdown: (metrics.max_drawdown ?? 0) * 100,
-            win_rate: (metrics.win_rate ?? 0) * 100,
-            num_trades: metrics.num_trades ?? (r.trade_history?.length ?? 0),
-            metrics,
-            equity_curve: r.equity_curve,
-          };
-          onEvent({ type: 'complete', data: results });
-          continue;
-        }
-
+      if (obj.stage === 'complete' && obj.results && typeof obj.results === 'object') {
         onEvent({
-          type: 'progress',
-          data: {
-            stage: parsed.stage,
-            message: parsed.message,
-            progress: typeof parsed.progress === 'number' ? parsed.progress : 0,
-            date: parsed.date,
-            portfolio_value: parsed.portfolio_value,
-          },
+          type: 'complete',
+          data: mapCompleteResults(obj.results as Record<string, unknown>),
         });
-      } catch (err) {
-        console.error('Failed to parse SSE data:', err, dataLine);
+        continue;
       }
+
+      onEvent({
+        type: 'progress',
+        data: {
+          stage: obj.stage as string | undefined,
+          message: obj.message as string | undefined,
+          progress: typeof obj.progress === 'number' ? obj.progress : 0,
+          date: obj.date as string | undefined,
+          portfolio_value: obj.portfolio_value as number | undefined,
+        },
+      });
     }
   }
 }

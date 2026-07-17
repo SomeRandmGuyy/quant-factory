@@ -26,7 +26,7 @@ export default function MetricsCard({ results }: MetricsCardProps) {
   const metrics = [
     {
       label: 'Total Return',
-      value: `${results.total_return.toFixed(2)}%`,
+      value: `${Number(results.total_return ?? 0).toFixed(2)}%`,
       color: results.total_return >= 0 ? 'text-green-600' : 'text-red-600',
     },
     {
@@ -46,12 +46,12 @@ export default function MetricsCard({ results }: MetricsCardProps) {
     },
     {
       label: 'Max Drawdown',
-      value: `${results.max_drawdown.toFixed(2)}%`,
+      value: `${Number(results.max_drawdown ?? 0).toFixed(2)}%`,
       color: 'text-red-600',
     },
     {
       label: 'Win Rate',
-      value: `${results.win_rate.toFixed(1)}%`,
+      value: `${Number(results.win_rate ?? 0).toFixed(1)}%`,
       color: 'text-gray-900',
     },
     {

@@ -20,6 +20,7 @@ from quant_lab.models.market_data import MarketData, Fundamentals
 from quant_lab.models.signal import Signal, SignalAction
 from quant_lab.portfolio.portfolio import Portfolio
 from quant_lab.strategies.protocols import StrategyConfig
+from quant_lab.portfolio.sizing import size_by_percent
 
 
 class MultiFactorConfig(StrategyConfig):
@@ -261,14 +262,17 @@ class MultiFactorStrategy:
         # Entry: high combined score, no position
         if combined_score >= self.config.entry_threshold and position is None:
             confidence = combined_score
-            target_value = portfolio.total_value * Decimal(str(self.config.max_position_size))
-            quantity = int(target_value / Decimal(str(current_price)))
-            
+            quantity = size_by_percent(
+                portfolio.total_value,
+                Decimal(str(current_price)),
+                self.config.max_position_size,
+            )
+
             if quantity > 0:
                 return Signal(
                     ticker=ticker,
                     action=SignalAction.BUY,
-                    quantity=Decimal(str(quantity)),
+                    quantity=quantity,
                     confidence=confidence,
                     reasoning=self._format_reasoning(scores),
                     metadata=scores,

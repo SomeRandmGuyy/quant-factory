@@ -12,7 +12,7 @@ from datetime import date
 from decimal import Decimal
 import asyncio
 
-from quant_lab.data import CSVDataProvider
+from quant_lab.data import CSVDataProvider, YahooFinanceProvider
 from quant_lab.models.market_data import MarketData
 from quant_lab.backtesting import BacktestEngine, BacktestConfig
 from quant_lab.strategies import (
@@ -23,31 +23,7 @@ from quant_lab.strategies import (
 )
 
 from quant_lab_api.config import settings
-import math
-from datetime import date, datetime
-from decimal import Decimal
-
-
-def _json_safe(obj):
-    """Recursively convert values to JSON-serializable types."""
-    if obj is None:
-        return None
-    if isinstance(obj, (str, int, bool)):
-        return obj
-    if isinstance(obj, float):
-        if math.isnan(obj) or math.isinf(obj):
-            return None
-        return obj
-    if isinstance(obj, Decimal):
-        return float(obj)
-    if isinstance(obj, (date, datetime)):
-        return obj.isoformat()
-    if isinstance(obj, dict):
-        return {str(k): _json_safe(v) for k, v in obj.items()}
-    if isinstance(obj, (list, tuple)):
-        return [_json_safe(v) for v in obj]
-    return str(obj)
-
+from quant_lab_api.utils.json_safe import json_safe
 
 
 # Strategy registry
@@ -85,6 +61,7 @@ class BacktestService:
         commission_bps: float = 5.0,
         slippage_bps: float = 2.0,
         rebalance_frequency: int = 5,
+        provider: str = "csv",
         progress_callback: Optional[Callable[[dict], Awaitable[None]]] = None,
     ) -> dict:
         """
@@ -99,6 +76,7 @@ class BacktestService:
             commission_bps: Commission in basis points
             slippage_bps: Slippage in basis points
             rebalance_frequency: Days between rebalances
+            provider: Data source (csv or yahoo)
             progress_callback: Optional async callback for progress updates
         
         Returns:
@@ -107,6 +85,8 @@ class BacktestService:
         Raises:
             ValueError: If strategy name is invalid or data cannot be loaded
         """
+        data_provider = self._make_provider(provider)
+
         # Validate strategy
         if strategy_name not in AVAILABLE_STRATEGIES:
             raise ValueError(
@@ -124,13 +104,13 @@ class BacktestService:
         
         # Load market data
         try:
-            prices_df = await self.data_provider.fetch_prices(
+            prices_df = await data_provider.fetch_prices(
                 tickers=tickers,
                 start_date=start_date,
                 end_date=end_date,
             )
             
-            fundamentals = await self.data_provider.fetch_fundamentals(tickers)
+            fundamentals = await data_provider.fetch_fundamentals(tickers)
             
             market_data = MarketData(
                 tickers=tickers,
@@ -188,7 +168,7 @@ class BacktestService:
             })
         
         # Format results (JSON-safe dates / floats)
-        results_dict = _json_safe({
+        results_dict = json_safe({
             "strategy_name": results.strategy_name,
             "start_date": results.start_date.isoformat(),
             "end_date": results.end_date.isoformat(),
@@ -223,6 +203,18 @@ class BacktestService:
         
         return results_dict
     
+    def _make_provider(self, provider: str):
+        """Return a data provider instance for the given name."""
+        name = (provider or "csv").lower().strip()
+        if name == "yahoo":
+            return YahooFinanceProvider()
+        if name == "csv":
+            return CSVDataProvider(
+                data_dir=settings.csv_data_dir,
+                fundamentals_file=settings.fundamentals_file,
+            )
+        raise ValueError(f"Unknown data provider: {provider}. Use 'csv' or 'yahoo'.")
+
     @staticmethod
     def get_available_strategies() -> list[dict[str, str]]:
         """
