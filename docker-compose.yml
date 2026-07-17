@@ -1,0 +1,60 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: quant-factory-postgres
+    environment:
+      POSTGRES_USER: quantlab
+      POSTGRES_PASSWORD: quantlab
+      POSTGRES_DB: quantlab
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quantlab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - quant-factory-network
+
+  # FastAPI Backend
+  api:
+    build:
+      context: .
+      dockerfile: ./packages/api/Dockerfile
+    container_name: quant-factory-api
+    environment:
+      DATABASE_URL: postgresql://quantlab:quantlab@postgres:5432/quantlab
+      CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - quant-factory-network
+    command: uvicorn quant_lab_api.main:app --host 0.0.0.0 --port 8000
+
+  # React Frontend
+  web:
+    build:
+      context: .
+      dockerfile: ./packages/web/Dockerfile
+    container_name: quant-factory-web
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - quant-factory-network
+
+volumes:
+  postgres_data:
+
+networks:
+  quant-factory-network:
+    driver: bridge
