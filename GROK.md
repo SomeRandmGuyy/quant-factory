@@ -3,6 +3,7 @@
 > **For humans and AI agents.** This is the authoritative walkthrough of the repository: what it is, how it is structured, what every file does, and how to extend it toward crypto and broader trading.
 >
 > **Repository:** https://github.com/SomeRandmGuyy/quant-factory.git  
+> **Upgrade roadmap (TDD):** [PHASES.md](./PHASES.md)  
 > **Product name:** Quant Factory  
 > **Version:** 0.1.0  
 > **License:** MIT (Copyright 2025 SomeRandmGuyy)

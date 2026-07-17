@@ -23,6 +23,31 @@ from quant_lab.strategies import (
 )
 
 from quant_lab_api.config import settings
+import math
+from datetime import date, datetime
+from decimal import Decimal
+
+
+def _json_safe(obj):
+    """Recursively convert values to JSON-serializable types."""
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, bool)):
+        return obj
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, (date, datetime)):
+        return obj.isoformat()
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    return str(obj)
+
 
 
 # Strategy registry
@@ -162,8 +187,8 @@ class BacktestService:
                 "progress": 0.8,
             })
         
-        # Format results
-        results_dict = {
+        # Format results (JSON-safe dates / floats)
+        results_dict = _json_safe({
             "strategy_name": results.strategy_name,
             "start_date": results.start_date.isoformat(),
             "end_date": results.end_date.isoformat(),
@@ -185,7 +210,7 @@ class BacktestService:
                 for trade in results.executed_trades
             ],
             "tickers": tickers,
-        }
+        })
         
         # Send progress: complete
         if progress_callback:

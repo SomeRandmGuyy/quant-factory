@@ -17,7 +17,7 @@ interface BacktestFormProps {
 export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps) {
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [formData, setFormData] = useState({
-    strategy_id: '',
+    strategy_name: '',
     tickers: 'AAPL,MSFT,TSLA',
     start_date: '2024-01-01',
     end_date: '2024-06-30',
@@ -53,8 +53,8 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
           Trading Strategy
         </label>
         <select
-          value={formData.strategy_id}
-          onChange={(e) => setFormData({ ...formData, strategy_id: e.target.value })}
+          value={formData.strategy_name}
+          onChange={(e) => setFormData({ ...formData, strategy_name: e.target.value })}
           required
           disabled={isRunning}
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
@@ -66,9 +66,9 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
             </option>
           ))}
         </select>
-        {formData.strategy_id && (
+        {formData.strategy_name && (
           <p className="mt-1 text-sm text-gray-500">
-            {strategies.find(s => s.id === formData.strategy_id)?.description}
+            {strategies.find(s => s.id === formData.strategy_name)?.description}
           </p>
         )}
       </div>

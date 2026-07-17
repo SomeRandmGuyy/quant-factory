@@ -7,6 +7,8 @@ Repository: **[https://github.com/SomeRandmGuyy/quant-factory](https://github.co
 Open-source lab for backtesting trading strategies with real-time visualization. Built as a monorepo (Python core + FastAPI + React). Equity-focused today; designed to extend toward crypto and broader trading.
 
 > Looking for a deep file-by-file map of the codebase? See **[GROK.md](./GROK.md)**.
+>
+> Phased upgrade plan (TDD, for agents): **[PHASES.md](./PHASES.md)**.
 
 ## Features
 

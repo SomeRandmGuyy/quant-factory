@@ -89,3 +89,6 @@ logs/
 # These ensure reproducible builds
 # !package-lock.json  (npm)
 # !poetry.lock        (poetry)
+quant-lab/
+.venv/
+

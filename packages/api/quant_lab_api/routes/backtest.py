@@ -83,7 +83,7 @@ async def run_backtest_streaming(
             # Progress callback for SSE
             async def send_progress(data: dict) -> None:
                 """Send progress event to client."""
-                event = f"data: {json.dumps(data)}\n\n"
+                event = f"data: {json.dumps(data, default=str)}\n\n"
                 yield event
             
             # Create generator for progress updates
@@ -140,17 +140,17 @@ async def run_backtest_streaming(
                     break
                 
                 if "error" in data:
-                    yield f"event: error\ndata: {json.dumps({'error': data['error']})}\n\n"
+                    yield f"event: error\ndata: {json.dumps({'error': data['error']}, default=str)}\n\n"
                     break
                 
-                yield f"data: {json.dumps(data)}\n\n"
+                yield f"data: {json.dumps(data, default=str)}\n\n"
             
             await task  # Ensure task completes
         
         except ValueError as e:
-            yield f"event: error\ndata: {json.dumps({'error': str(e)})}\n\n"
+            yield f"event: error\ndata: {json.dumps({'error': str(e)}, default=str)}\n\n"
         except Exception as e:
-            yield f"event: error\ndata: {json.dumps({'error': f'Internal error: {str(e)}'})} \n\n"
+            yield f"event: error\ndata: {json.dumps({'error': f'Internal error: {str(e)}'}, default=str)} \n\n"
     
     return StreamingResponse(
         event_generator(),

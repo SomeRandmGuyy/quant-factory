@@ -39,15 +39,24 @@ export default function App() {
       await runBacktest(request, (event) => {
         if (event.type === 'progress') {
           const data = event.data as ProgressEvent;
-          setProgress(data.progress * 100);
-          
-          // Update equity curve with new data point
-          setEquityCurveData(prev => [
-            ...prev,
-            { date: data.date, value: data.portfolio_value }
-          ]);
+          setProgress((data.progress ?? 0) * 100);
+          if (data.date && data.portfolio_value != null) {
+            setEquityCurveData(prev => [
+              ...prev,
+              { date: data.date!, value: data.portfolio_value! }
+            ]);
+          }
         } else if (event.type === 'complete') {
-          setResults(event.data as BacktestResults);
+          const complete = event.data as BacktestResults;
+          setResults(complete);
+          if (complete.equity_curve && Array.isArray(complete.equity_curve)) {
+            setEquityCurveData(
+              complete.equity_curve.map((row: Record<string, unknown>) => ({
+                date: String(row.date ?? ''),
+                value: Number(row.total_value ?? row.value ?? 0),
+              }))
+            );
+          }
           setProgress(100);
           setIsRunning(false);
         } else if (event.type === 'error') {

@@ -1,0 +1,46 @@
+# Local development (this server)
+
+## Quick start
+
+```bash
+cd /root/.grok/worktrees/repos-quant-factory/quant-factory
+source .venv/bin/activate
+
+# API (port 8001 — 8000 is already used on this host)
+export PYTHONPATH="$PWD/packages/core:$PWD/packages/api"
+uvicorn quant_lab_api.main:app --host 0.0.0.0 --port 8001 --app-dir packages/api
+
+# Web (separate terminal)
+cd packages/web
+npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+- **Web UI:** http://localhost:3000 (or `http://<server-ip>:3000`)
+- **API:** http://localhost:8001
+- **API docs:** http://localhost:8001/docs
+
+## Configuration
+
+- `.env` at repo root (gitignored) sets SQLite DB, CORS, and `CSV_DATA_DIR` → `./data`
+- Sample tickers: `AAPL`, `MSFT`, `TSLA` under `data/*.csv` plus `data/fundamentals.csv`
+
+## Smoke tests
+
+```bash
+curl http://127.0.0.1:8001/health
+curl http://127.0.0.1:8001/api/strategies
+```
+
+## Process management
+
+```bash
+kill $(cat /tmp/quant-factory-api.pid) 2>/dev/null
+kill $(cat /tmp/quant-factory-web.pid) 2>/dev/null
+tail -f /tmp/quant-factory-api.log /tmp/quant-factory-web.log
+```
+
+## Notes
+
+- Port **8000** is occupied on this host; use **8001**.
+- Trend Following may produce **zero trades** on short synthetic data (needs golden cross). Try **Value Moat** or **Multi-Factor** for activity.
+- Do not commit `.env` or API keys.
