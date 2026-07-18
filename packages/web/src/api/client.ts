@@ -2,16 +2,22 @@
  * API client for Quant Factory backend.
  */
 
-import type { Strategy, BacktestRequest, BacktestEvent, BacktestResults } from '../types';
+import type {
+  Strategy,
+  BacktestRequest,
+  BacktestEvent,
+  BacktestResults,
+  WalkForwardRequest,
+  WalkForwardReport,
+  ExperimentSummary,
+} from '../types';
 import { parseSseChunk } from './sse';
 
 const API_BASE_URL = '/api';
 
 export async function fetchStrategies(): Promise<Strategy[]> {
   const response = await fetch(`${API_BASE_URL}/strategies`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch strategies');
-  }
+  if (!response.ok) throw new Error('Failed to fetch strategies');
   return response.json();
 }
 
@@ -32,12 +38,10 @@ function mapCompleteResults(r: Record<string, unknown>): BacktestResults {
     num_trades: Number(metrics.num_trades ?? tradeHistory.length ?? 0),
     metrics,
     equity_curve: r.equity_curve as Array<Record<string, unknown>> | undefined,
+    benchmark_equity_curve: r.benchmark_equity_curve as Array<Record<string, unknown>> | undefined,
   };
 }
 
-/**
- * Run a backtest with Server-Sent Events streaming.
- */
 export async function runBacktest(
   request: BacktestRequest,
   onEvent: (event: BacktestEvent) => void
@@ -47,13 +51,8 @@ export async function runBacktest(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
   });
-
-  if (!response.ok) {
-    throw new Error('Failed to start backtest');
-  }
-  if (!response.body) {
-    throw new Error('No response body');
-  }
+  if (!response.ok) throw new Error('Failed to start backtest');
+  if (!response.body) throw new Error('No response body');
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -62,7 +61,6 @@ export async function runBacktest(
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
-
     buffer += decoder.decode(value, { stream: true });
     const chunks = buffer.split('\n\n');
     buffer = chunks.pop() || '';
@@ -70,7 +68,6 @@ export async function runBacktest(
     for (const chunk of chunks) {
       const parsed = parseSseChunk(chunk);
       if (!parsed) continue;
-
       const { eventType, data } = parsed;
 
       if (eventType === 'error') {
@@ -81,15 +78,12 @@ export async function runBacktest(
         onEvent({ type: 'error', data: err });
         continue;
       }
-
       if (typeof data !== 'object' || data === null) continue;
       const obj = data as Record<string, unknown>;
-
       if (obj.error) {
         onEvent({ type: 'error', data: String(obj.error) });
         continue;
       }
-
       if (obj.stage === 'complete' && obj.results && typeof obj.results === 'object') {
         onEvent({
           type: 'complete',
@@ -97,7 +91,6 @@ export async function runBacktest(
         });
         continue;
       }
-
       onEvent({
         type: 'progress',
         data: {
@@ -110,4 +103,24 @@ export async function runBacktest(
       });
     }
   }
+}
+
+export async function runWalkForward(request: WalkForwardRequest): Promise<WalkForwardReport> {
+  const response = await fetch(`${API_BASE_URL}/backtest/walk-forward`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(err || 'Walk-forward failed');
+  }
+  return response.json();
+}
+
+export async function listExperiments(kind?: string): Promise<ExperimentSummary[]> {
+  const q = kind ? `?kind=${encodeURIComponent(kind)}` : '';
+  const response = await fetch(`${API_BASE_URL}/experiments${q}`);
+  if (!response.ok) throw new Error('Failed to list experiments');
+  return response.json();
 }

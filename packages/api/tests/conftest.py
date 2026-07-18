@@ -23,6 +23,7 @@ config_mod.settings = Settings()
 
 from quant_lab_api.database import base as db_base
 from quant_lab_api.database.base import Base
+from quant_lab_api.database import models  # noqa: F401
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool

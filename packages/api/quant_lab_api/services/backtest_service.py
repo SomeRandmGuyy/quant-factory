@@ -15,6 +15,13 @@ import asyncio
 from quant_lab.data import CSVDataProvider, YahooFinanceProvider
 from quant_lab.models.market_data import MarketData
 from quant_lab.backtesting import BacktestEngine, BacktestConfig
+from quant_lab.backtesting.benchmark import (
+    buy_and_hold_equity,
+    align_equity_on_dates,
+    excess_return,
+    total_return,
+)
+from quant_lab.backtesting.walk_forward import WalkForwardRunner
 from quant_lab.strategies import (
     Strategy,
     ValueMoatStrategy,
@@ -62,6 +69,8 @@ class BacktestService:
         slippage_bps: float = 2.0,
         rebalance_frequency: int = 5,
         provider: str = "csv",
+        benchmark_ticker: Optional[str] = None,
+        impact_bps: float = 0.0,
         progress_callback: Optional[Callable[[dict], Awaitable[None]]] = None,
     ) -> dict:
         """
@@ -102,23 +111,30 @@ class BacktestService:
                 "progress": 0.1,
             })
         
-        # Load market data
+        # Load market data (include optional benchmark ticker)
+        load_tickers = list(tickers)
+        bench = benchmark_ticker.upper().strip() if benchmark_ticker else None
+        if bench and bench not in load_tickers:
+            load_tickers.append(bench)
+
         try:
             prices_df = await data_provider.fetch_prices(
-                tickers=tickers,
+                tickers=load_tickers,
                 start_date=start_date,
                 end_date=end_date,
             )
             
             fundamentals = await data_provider.fetch_fundamentals(tickers)
             
+            strat_prices = prices_df[prices_df["ticker"].isin([t.upper() for t in tickers])].copy()
             market_data = MarketData(
-                tickers=tickers,
+                tickers=[t.upper() for t in tickers],
                 start_date=start_date,
                 end_date=end_date,
-                prices=prices_df,
+                prices=strat_prices,
                 fundamentals=fundamentals,
             )
+            full_prices = prices_df
         except Exception as e:
             raise ValueError(f"Failed to load market data: {str(e)}")
         
@@ -139,6 +155,7 @@ class BacktestService:
             commission_bps=commission_bps,
             slippage_bps=slippage_bps,
             rebalance_frequency=rebalance_frequency,
+            impact_bps=impact_bps,
         )
         
         # Send progress: running backtest
@@ -186,12 +203,30 @@ class BacktestService:
                     "price": float(trade.price),
                     "fees": float(trade.fees),
                     "slippage": float(trade.slippage),
+                    "realized_pnl": (trade.metadata or {}).get("realized_pnl"),
                 }
                 for trade in results.executed_trades
             ],
             "tickers": tickers,
+            "benchmark_equity_curve": None,
         })
         
+        # Optional benchmark equity + excess return
+        if bench:
+            bdf = full_prices[full_prices["ticker"] == bench].copy()
+            if bdf.empty:
+                raise ValueError(f"No benchmark data for {bench}")
+            bench_curve = buy_and_hold_equity(bdf, initial_capital)
+            s_vals, b_vals, _keys = align_equity_on_dates(
+                results.daily_snapshots, bench_curve
+            )
+            metrics = dict(results_dict.get("metrics") or {})
+            metrics["benchmark_ticker"] = bench
+            metrics["benchmark_return"] = total_return(b_vals)
+            metrics["excess_return"] = excess_return(s_vals, b_vals)
+            results_dict["metrics"] = metrics
+            results_dict["benchmark_equity_curve"] = json_safe(bench_curve)
+
         # Send progress: complete
         if progress_callback:
             await progress_callback({
@@ -203,6 +238,55 @@ class BacktestService:
         
         return results_dict
     
+    async def run_walk_forward(
+        self,
+        strategy_name: str,
+        tickers: list[str],
+        start_date: date,
+        end_date: date,
+        initial_capital: float = 100000.0,
+        commission_bps: float = 5.0,
+        slippage_bps: float = 2.0,
+        impact_bps: float = 0.0,
+        rebalance_frequency: int = 5,
+        provider: str = "csv",
+        train_days: int = 60,
+        test_days: int = 20,
+        step_days: int = 20,
+        mode: str = "rolling",
+    ) -> dict:
+        if strategy_name not in AVAILABLE_STRATEGIES:
+            raise ValueError(f"Unknown strategy: {strategy_name}")
+        data_provider = self._make_provider(provider)
+        prices_df = await data_provider.fetch_prices(tickers, start_date, end_date)
+        fundamentals = await data_provider.fetch_fundamentals(tickers)
+        market_data = MarketData(
+            tickers=[t.upper() for t in tickers],
+            start_date=start_date,
+            end_date=end_date,
+            prices=prices_df,
+            fundamentals=fundamentals,
+        )
+        config = BacktestConfig(
+            initial_capital=initial_capital,
+            commission_bps=commission_bps,
+            slippage_bps=slippage_bps,
+            impact_bps=impact_bps,
+            rebalance_frequency=rebalance_frequency,
+        )
+        runner = WalkForwardRunner(
+            strategy=AVAILABLE_STRATEGIES[strategy_name](),
+            market_data=market_data,
+            config=config,
+        )
+        report = await runner.run(
+            train_days=train_days,
+            test_days=test_days,
+            step_days=step_days,
+            mode=mode,  # type: ignore[arg-type]
+        )
+        return json_safe(report)
+
     def _make_provider(self, provider: str):
         """Return a data provider instance for the given name."""
         name = (provider or "csv").lower().strip()

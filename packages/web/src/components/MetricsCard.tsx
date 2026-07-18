@@ -64,6 +64,20 @@ export default function MetricsCard({ results }: MetricsCardProps) {
       value: results.strategy_name,
       color: 'text-gray-900',
     },
+    {
+      label: 'Benchmark Return',
+      value: results.metrics?.benchmark_return != null
+        ? `${(Number(results.metrics.benchmark_return) * 100).toFixed(2)}%`
+        : 'N/A',
+      color: 'text-gray-900',
+    },
+    {
+      label: 'Excess Return',
+      value: results.metrics?.excess_return != null
+        ? `${(Number(results.metrics.excess_return) * 100).toFixed(2)}%`
+        : 'N/A',
+      color: 'text-gray-900',
+    },
   ];
 
   return (

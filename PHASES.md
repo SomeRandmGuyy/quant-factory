@@ -1136,12 +1136,12 @@ When completing a phase step, update:
 [x] 0.5 Yahoo provider flag + network-marked tests
 [x] 0.6 Fractional sizing module + strategy migration
 [x] 0.7 CI workflow + docs
-[ ] 1.1 Per-trade PnL
-[ ] 1.2 Cost model
-[ ] 1.3 Benchmark excess return
-[ ] 1.4 Walk-forward splits + runner
-[ ] 1.5 Experiment store
-[ ] 1.6 CLI
+[x] 1.1 Per-trade PnL
+[x] 1.2 Cost model
+[x] 1.3 Benchmark excess return
+[x] 1.4 Walk-forward splits + runner
+[x] 1.5 Experiment store
+[x] 1.6 CLI
 [ ] 2.1 Sizers
 [ ] 2.2 RiskGate
 [ ] 2.3 Engine stops

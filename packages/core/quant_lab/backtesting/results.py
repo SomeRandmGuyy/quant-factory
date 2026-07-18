@@ -134,30 +134,14 @@ class BacktestResults:
         return metrics
     
     def _calculate_trades_pnl(self) -> list[float]:
-        """
-        Calculate P&L for each closed trade.
-        
-        Note: This is a simplified calculation for metrics.
-        Real P&L is tracked in portfolio.realized_pnl.
-        """
-        # For now, use realized P&L from portfolio
-        # In a more sophisticated version, we'd track per-trade P&L
-        if not self.executed_trades:
-            return []
-        
-        # Estimate: divide total realized P&L by number of closing trades
-        closing_trades = [
-            t for t in self.executed_trades 
-            if t.is_closing
-        ]
-        
-        if not closing_trades:
-            return []
-        
-        # Simple approximation
-        avg_pnl_per_trade = float(self.portfolio.realized_pnl) / len(closing_trades)
-        
-        return [avg_pnl_per_trade] * len(closing_trades)
+        """Per-closing-trade realized PnL from trade metadata (set by engine)."""
+        pnls: list[float] = []
+        for t in self.executed_trades:
+            if not t.is_closing:
+                continue
+            if t.metadata and "realized_pnl" in t.metadata:
+                pnls.append(float(t.metadata["realized_pnl"]))
+        return pnls
     
     def summary(self) -> str:
         """Get formatted summary of backtest results."""

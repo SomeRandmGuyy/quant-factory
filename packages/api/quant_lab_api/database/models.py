@@ -76,3 +76,23 @@ class BacktestRun(Base):
     
     def __repr__(self) -> str:
         return f"<BacktestRun(id={self.id}, strategy={self.strategy_name}, return={self.total_return:.2%})>"
+
+
+
+class Experiment(Base):
+    """Research experiment log (backtest or walk-forward summary)."""
+
+    __tablename__ = "experiments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=True)
+    kind = Column(String(50), nullable=False, index=True)  # backtest | walk_forward
+    strategy_name = Column(String(100), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    params = Column(JSON, nullable=True)
+    metrics = Column(JSON, nullable=True)
+    artifact = Column(JSON, nullable=True)
+    status = Column(String(20), nullable=False, default="completed", index=True)
+
+    def __repr__(self) -> str:
+        return f"<Experiment(id={self.id}, kind={self.kind}, strategy={self.strategy_name})>"

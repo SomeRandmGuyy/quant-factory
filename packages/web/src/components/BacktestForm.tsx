@@ -23,6 +23,8 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
     end_date: '2024-06-30',
     initial_capital: 100000,
     provider: 'csv' as 'csv' | 'yahoo',
+    benchmark_ticker: '',
+    impact_bps: 0,
   });
 
   // Load strategies on mount
@@ -36,9 +38,15 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
     e.preventDefault();
     
     const request: BacktestRequest = {
-      ...formData,
-      tickers: formData.tickers.split(',').map(t => t.trim()),
+      strategy_name: formData.strategy_name,
+      tickers: formData.tickers.split(',').map(t => t.trim()).filter(Boolean),
+      start_date: formData.start_date,
+      end_date: formData.end_date,
       initial_capital: Number(formData.initial_capital),
+      provider: formData.provider,
+      impact_bps: Number(formData.impact_bps) || 0,
+      benchmark_ticker: formData.benchmark_ticker.trim() || null,
+      save_experiment: true,
     };
     
     onSubmit(request);
@@ -153,6 +161,36 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
           min="1000"
           step="1000"
           disabled={isRunning}
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+        />
+      </div>
+
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Benchmark ticker (optional)
+        </label>
+        <input
+          type="text"
+          value={formData.benchmark_ticker}
+          onChange={(e) => setFormData({ ...formData, benchmark_ticker: e.target.value })}
+          disabled={isRunning}
+          placeholder="SPY"
+          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Impact bps (0 = off)
+        </label>
+        <input
+          type="number"
+          value={formData.impact_bps}
+          onChange={(e) => setFormData({ ...formData, impact_bps: Number(e.target.value) })}
+          disabled={isRunning}
+          min="0"
+          step="1"
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         />
       </div>

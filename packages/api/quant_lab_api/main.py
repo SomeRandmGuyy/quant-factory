@@ -10,7 +10,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from quant_lab_api.config import settings
 from quant_lab_api.database.base import init_db
+from quant_lab_api.database import models as _models  # noqa: F401 — register models
 from quant_lab_api.routes import backtest, strategies
+from quant_lab_api.routes import walk_forward, experiments
 
 
 @asynccontextmanager
@@ -42,6 +44,8 @@ app.add_middleware(
 # Mount routes
 app.include_router(backtest.router)
 app.include_router(strategies.router)
+app.include_router(walk_forward.router)
+app.include_router(experiments.router)
 
 
 @app.get("/")

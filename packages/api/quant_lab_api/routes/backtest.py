@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from quant_lab_api.database.base import get_db
 from quant_lab_api.repositories.backtest_repository import BacktestRepository
+from quant_lab_api.repositories.experiment_repository import ExperimentRepository
 from quant_lab_api.services.backtest_service import BacktestService
 import json
 import asyncio
@@ -38,6 +39,9 @@ class BacktestRequest(BaseModel):
     slippage_bps: float = Field(default=2.0, ge=0, description="Slippage in basis points")
     rebalance_frequency: int = Field(default=5, gt=0, description="Days between rebalances")
     provider: Literal["csv", "yahoo"] = Field(default="csv", description="Market data provider")
+    benchmark_ticker: str | None = Field(default=None, description="Optional benchmark e.g. SPY")
+    impact_bps: float = Field(default=0.0, ge=0, description="Impact bps per participation")
+    save_experiment: bool = Field(default=True, description="Persist experiment summary")
 
 
 class BacktestResponse(BaseModel):
@@ -106,6 +110,8 @@ async def run_backtest_streaming(
                         slippage_bps=request.slippage_bps,
                         rebalance_frequency=request.rebalance_frequency,
                         provider=request.provider,
+                        benchmark_ticker=request.benchmark_ticker,
+                        impact_bps=request.impact_bps,
                         progress_callback=progress_callback,
                     )
                     
@@ -124,6 +130,22 @@ async def run_backtest_streaming(
                         equity_curve=results["equity_curve"],
                         trade_history=results["trade_history"],
                     )
+                    if request.save_experiment:
+                        ExperimentRepository(db).create(
+                            kind="backtest",
+                            strategy_name=results["strategy_name"],
+                            name=f"{results['strategy_name']} {results['start_date']}→{results['end_date']}",
+                            params={
+                                "tickers": results["tickers"],
+                                "start_date": results["start_date"],
+                                "end_date": results["end_date"],
+                                "provider": request.provider,
+                                "benchmark_ticker": request.benchmark_ticker,
+                                "initial_capital": results["initial_capital"],
+                            },
+                            metrics=results["metrics"],
+                            artifact={"num_trades": len(results.get("trade_history") or [])},
+                        )
                     
                     await progress_queue.put(None)  # Signal completion
                 

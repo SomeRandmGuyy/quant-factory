@@ -271,3 +271,9 @@ class PerformanceMetrics:
             })
         
         return metrics
+
+
+def excess_return(strategy_values: list[float], benchmark_values: list[float]) -> float:
+    """Re-export for convenience; see quant_lab.backtesting.benchmark."""
+    from quant_lab.backtesting.benchmark import excess_return as _er
+    return _er(strategy_values, benchmark_values)

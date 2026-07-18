@@ -67,3 +67,22 @@ export PYTHONPATH=packages/core:packages/api
 pytest packages/core/tests packages/api/tests -q -m "not network"
 cd packages/web && npm test
 ```
+
+
+## Phase 1 APIs
+
+```bash
+# Walk-forward
+curl -X POST http://127.0.0.1:8001/api/backtest/walk-forward \
+  -H 'Content-Type: application/json' \
+  -d '{"strategy_name":"multi_factor","tickers":["AAPL","MSFT"],"start_date":"2024-01-02","end_date":"2024-02-29","train_days":10,"test_days":5,"step_days":5,"provider":"csv"}'
+
+# Experiments
+curl http://127.0.0.1:8001/api/experiments
+
+# CLI
+export PYTHONPATH=packages/core
+python -m quant_lab.cli backtest --strategy multi_factor --tickers AAPL,MSFT \
+  --start 2024-01-02 --end 2024-02-29 --provider csv \
+  --data-dir packages/core/tests/fixtures/sample_prices
+```
