@@ -22,6 +22,9 @@ from quant_lab.backtesting.benchmark import (
     total_return,
 )
 from quant_lab.backtesting.walk_forward import WalkForwardRunner
+from quant_lab.risk.limits import RiskLimits
+from quant_lab.risk.stops import StopConfig
+from quant_lab.portfolio.sizing import make_sizer
 from quant_lab.strategies import (
     Strategy,
     ValueMoatStrategy,
@@ -71,6 +74,16 @@ class BacktestService:
         provider: str = "csv",
         benchmark_ticker: Optional[str] = None,
         impact_bps: float = 0.0,
+        sizer: str = "percent",
+        max_position_pct: float = 0.20,
+        target_vol: float = 0.10,
+        max_gross_leverage: float = 2.0,
+        max_drawdown_halt: float = 0.30,
+        enable_risk_gate: bool = True,
+        stop_loss_pct: Optional[float] = None,
+        take_profit_pct: Optional[float] = None,
+        time_stop_days: Optional[int] = None,
+        resize_signals: bool = False,
         progress_callback: Optional[Callable[[dict], Awaitable[None]]] = None,
     ) -> dict:
         """
@@ -156,6 +169,22 @@ class BacktestService:
             slippage_bps=slippage_bps,
             rebalance_frequency=rebalance_frequency,
             impact_bps=impact_bps,
+            enable_risk_gate=enable_risk_gate,
+            risk_limits=RiskLimits(
+                max_position_pct=max_position_pct,
+                max_gross_leverage=max_gross_leverage,
+                max_drawdown_halt=max_drawdown_halt,
+            ),
+            stop_config=StopConfig(
+                stop_loss_pct=stop_loss_pct,
+                take_profit_pct=take_profit_pct,
+                time_stop_days=time_stop_days,
+            ),
+            sizer=make_sizer(sizer, max_position_pct=max_position_pct, target_vol=target_vol),
+            sizer_name=sizer,
+            max_position_pct=max_position_pct,
+            target_vol=target_vol,
+            resize_signals=resize_signals,
         )
         
         # Send progress: running backtest
@@ -209,6 +238,8 @@ class BacktestService:
             ],
             "tickers": tickers,
             "benchmark_equity_curve": None,
+            "underwater_curve": results.underwater_curve,
+            "rejected_trades": getattr(results, "rejected_trades", []),
         })
         
         # Optional benchmark equity + excess return
@@ -254,6 +285,16 @@ class BacktestService:
         test_days: int = 20,
         step_days: int = 20,
         mode: str = "rolling",
+        sizer: str = "percent",
+        max_position_pct: float = 0.20,
+        target_vol: float = 0.10,
+        max_gross_leverage: float = 2.0,
+        max_drawdown_halt: float = 0.30,
+        enable_risk_gate: bool = True,
+        stop_loss_pct: Optional[float] = None,
+        take_profit_pct: Optional[float] = None,
+        time_stop_days: Optional[int] = None,
+        resize_signals: bool = False,
     ) -> dict:
         if strategy_name not in AVAILABLE_STRATEGIES:
             raise ValueError(f"Unknown strategy: {strategy_name}")
@@ -273,6 +314,22 @@ class BacktestService:
             slippage_bps=slippage_bps,
             impact_bps=impact_bps,
             rebalance_frequency=rebalance_frequency,
+            enable_risk_gate=enable_risk_gate,
+            risk_limits=RiskLimits(
+                max_position_pct=max_position_pct,
+                max_gross_leverage=max_gross_leverage,
+                max_drawdown_halt=max_drawdown_halt,
+            ),
+            stop_config=StopConfig(
+                stop_loss_pct=stop_loss_pct,
+                take_profit_pct=take_profit_pct,
+                time_stop_days=time_stop_days,
+            ),
+            sizer=make_sizer(sizer, max_position_pct=max_position_pct, target_vol=target_vol),
+            sizer_name=sizer,
+            max_position_pct=max_position_pct,
+            target_vol=target_vol,
+            resize_signals=resize_signals,
         )
         runner = WalkForwardRunner(
             strategy=AVAILABLE_STRATEGIES[strategy_name](),

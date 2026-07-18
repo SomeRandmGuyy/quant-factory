@@ -25,6 +25,15 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
     provider: 'csv' as 'csv' | 'yahoo',
     benchmark_ticker: '',
     impact_bps: 0,
+    sizer: 'percent' as 'percent' | 'vol_target' | 'equal_weight',
+    max_position_pct: 0.2,
+    target_vol: 0.1,
+    max_gross_leverage: 2,
+    max_drawdown_halt: 0.3,
+    enable_risk_gate: true,
+    stop_loss_pct: '' as string | number,
+    take_profit_pct: '' as string | number,
+    time_stop_days: '' as string | number,
   });
 
   // Load strategies on mount
@@ -47,6 +56,15 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
       impact_bps: Number(formData.impact_bps) || 0,
       benchmark_ticker: formData.benchmark_ticker.trim() || null,
       save_experiment: true,
+      sizer: formData.sizer,
+      max_position_pct: Number(formData.max_position_pct),
+      target_vol: Number(formData.target_vol),
+      max_gross_leverage: Number(formData.max_gross_leverage),
+      max_drawdown_halt: Number(formData.max_drawdown_halt),
+      enable_risk_gate: formData.enable_risk_gate,
+      stop_loss_pct: formData.stop_loss_pct === '' ? null : Number(formData.stop_loss_pct),
+      take_profit_pct: formData.take_profit_pct === '' ? null : Number(formData.take_profit_pct),
+      time_stop_days: formData.time_stop_days === '' ? null : Number(formData.time_stop_days),
     };
     
     onSubmit(request);
@@ -194,6 +212,66 @@ export default function BacktestForm({ onSubmit, isRunning }: BacktestFormProps)
           className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
         />
       </div>
+
+
+      <details className="border rounded-md p-3 bg-gray-50">
+        <summary className="cursor-pointer text-sm font-medium text-gray-800">Risk &amp; sizing (advanced)</summary>
+        <div className="mt-3 space-y-3">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Sizer</label>
+            <select className="w-full px-3 py-2 border rounded-md" disabled={isRunning}
+              value={formData.sizer}
+              onChange={(e) => setFormData({ ...formData, sizer: e.target.value as typeof formData.sizer })}>
+              <option value="percent">Percent of equity</option>
+              <option value="vol_target">Volatility target</option>
+              <option value="equal_weight">Equal weight</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-gray-600">Max position %</label>
+              <input type="number" step="0.01" min="0.01" max="1" className="w-full px-2 py-1 border rounded" disabled={isRunning}
+                value={formData.max_position_pct}
+                onChange={(e) => setFormData({ ...formData, max_position_pct: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">Target vol</label>
+              <input type="number" step="0.01" min="0.01" className="w-full px-2 py-1 border rounded" disabled={isRunning}
+                value={formData.target_vol}
+                onChange={(e) => setFormData({ ...formData, target_vol: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">Max gross lev</label>
+              <input type="number" step="0.1" min="0.1" className="w-full px-2 py-1 border rounded" disabled={isRunning}
+                value={formData.max_gross_leverage}
+                onChange={(e) => setFormData({ ...formData, max_gross_leverage: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">Max DD halt</label>
+              <input type="number" step="0.01" min="0.01" max="1" className="w-full px-2 py-1 border rounded" disabled={isRunning}
+                value={formData.max_drawdown_halt}
+                onChange={(e) => setFormData({ ...formData, max_drawdown_halt: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">Stop loss %</label>
+              <input type="number" step="0.01" min="0" max="1" placeholder="off" className="w-full px-2 py-1 border rounded" disabled={isRunning}
+                value={formData.stop_loss_pct}
+                onChange={(e) => setFormData({ ...formData, stop_loss_pct: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600">Take profit %</label>
+              <input type="number" step="0.01" min="0" max="1" placeholder="off" className="w-full px-2 py-1 border rounded" disabled={isRunning}
+                value={formData.take_profit_pct}
+                onChange={(e) => setFormData({ ...formData, take_profit_pct: e.target.value })} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={formData.enable_risk_gate} disabled={isRunning}
+              onChange={(e) => setFormData({ ...formData, enable_risk_gate: e.target.checked })} />
+            Enable risk gate
+          </label>
+        </div>
+      </details>
 
       {/* Submit Button */}
       <button

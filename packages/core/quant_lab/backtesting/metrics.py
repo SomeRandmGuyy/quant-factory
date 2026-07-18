@@ -259,6 +259,8 @@ class PerformanceMetrics:
             "sortino_ratio": self.sortino_ratio(),
             "max_drawdown": self.max_drawdown(),
             "calmar_ratio": self.calmar_ratio(),
+            "var_95": historical_var(self.daily_returns),
+            "cvar_95": historical_cvar(self.daily_returns),
         }
         
         # Add trade-level metrics if trades provided
@@ -277,3 +279,44 @@ def excess_return(strategy_values: list[float], benchmark_values: list[float]) -
     """Re-export for convenience; see quant_lab.backtesting.benchmark."""
     from quant_lab.backtesting.benchmark import excess_return as _er
     return _er(strategy_values, benchmark_values)
+
+
+def historical_var(returns: np.ndarray | list[float], alpha: float = 0.95) -> float:
+    """
+    Historical VaR at confidence alpha (e.g. 0.95).
+    Returns a non-positive number (loss as fraction of portfolio).
+    """
+    arr = np.asarray(returns, dtype=float)
+    if arr.size == 0:
+        return 0.0
+    # left tail
+    q = np.quantile(arr, 1.0 - alpha)
+    return float(min(0.0, q))
+
+
+def historical_cvar(returns: np.ndarray | list[float], alpha: float = 0.95) -> float:
+    """
+    Historical CVaR (Expected Shortfall): mean of returns at or below VaR.
+    Returns non-positive number.
+    """
+    arr = np.asarray(returns, dtype=float)
+    if arr.size == 0:
+        return 0.0
+    var = historical_var(arr, alpha=alpha)
+    tail = arr[arr <= var + 1e-15]
+    if tail.size == 0:
+        return var
+    return float(np.mean(tail))
+
+
+def underwater_series(daily_values: list[float]) -> list[float]:
+    """Drawdown series relative to running peak, each <= 0."""
+    if not daily_values:
+        return []
+    out = []
+    peak = daily_values[0]
+    for v in daily_values:
+        peak = max(peak, v)
+        dd = (v / peak - 1.0) if peak > 0 else 0.0
+        out.append(min(0.0, dd))
+    return out

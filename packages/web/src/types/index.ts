@@ -19,6 +19,16 @@ export interface BacktestRequest {
   benchmark_ticker?: string | null;
   impact_bps?: number;
   save_experiment?: boolean;
+  sizer?: 'percent' | 'vol_target' | 'equal_weight';
+  max_position_pct?: number;
+  target_vol?: number;
+  max_gross_leverage?: number;
+  max_drawdown_halt?: number;
+  enable_risk_gate?: boolean;
+  stop_loss_pct?: number | null;
+  take_profit_pct?: number | null;
+  time_stop_days?: number | null;
+  resize_signals?: boolean;
 }
 
 export interface BacktestResults {
@@ -36,6 +46,8 @@ export interface BacktestResults {
   metrics?: Record<string, number | string | null>;
   equity_curve?: Array<Record<string, unknown>>;
   benchmark_equity_curve?: Array<Record<string, unknown>>;
+  underwater_curve?: Array<{ date: string; drawdown: number }>;
+  rejected_trades?: Array<Record<string, unknown>>;
 }
 
 export interface ProgressEvent {

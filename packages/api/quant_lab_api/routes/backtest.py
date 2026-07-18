@@ -42,6 +42,16 @@ class BacktestRequest(BaseModel):
     benchmark_ticker: str | None = Field(default=None, description="Optional benchmark e.g. SPY")
     impact_bps: float = Field(default=0.0, ge=0, description="Impact bps per participation")
     save_experiment: bool = Field(default=True, description="Persist experiment summary")
+    sizer: Literal["percent", "vol_target", "equal_weight"] = Field(default="percent")
+    max_position_pct: float = Field(default=0.20, gt=0, le=1)
+    target_vol: float = Field(default=0.10, gt=0)
+    max_gross_leverage: float = Field(default=2.0, gt=0)
+    max_drawdown_halt: float = Field(default=0.30, gt=0, le=1)
+    enable_risk_gate: bool = True
+    stop_loss_pct: float | None = Field(default=None, ge=0, le=1)
+    take_profit_pct: float | None = Field(default=None, ge=0, le=1)
+    time_stop_days: int | None = Field(default=None, gt=0)
+    resize_signals: bool = False
 
 
 class BacktestResponse(BaseModel):
@@ -112,6 +122,16 @@ async def run_backtest_streaming(
                         provider=request.provider,
                         benchmark_ticker=request.benchmark_ticker,
                         impact_bps=request.impact_bps,
+                        sizer=request.sizer,
+                        max_position_pct=request.max_position_pct,
+                        target_vol=request.target_vol,
+                        max_gross_leverage=request.max_gross_leverage,
+                        max_drawdown_halt=request.max_drawdown_halt,
+                        enable_risk_gate=request.enable_risk_gate,
+                        stop_loss_pct=request.stop_loss_pct,
+                        take_profit_pct=request.take_profit_pct,
+                        time_stop_days=request.time_stop_days,
+                        resize_signals=request.resize_signals,
                         progress_callback=progress_callback,
                     )
                     

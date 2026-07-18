@@ -29,6 +29,16 @@ class WalkForwardRequest(BaseModel):
     step_days: int = Field(default=20, gt=0)
     mode: Literal["rolling", "expanding"] = "rolling"
     save_experiment: bool = True
+    sizer: Literal["percent", "vol_target", "equal_weight"] = "percent"
+    max_position_pct: float = Field(default=0.20, gt=0, le=1)
+    target_vol: float = Field(default=0.10, gt=0)
+    max_gross_leverage: float = Field(default=2.0, gt=0)
+    max_drawdown_halt: float = Field(default=0.30, gt=0, le=1)
+    enable_risk_gate: bool = True
+    stop_loss_pct: float | None = None
+    take_profit_pct: float | None = None
+    time_stop_days: int | None = None
+    resize_signals: bool = False
 
 
 @router.post("/walk-forward")
@@ -53,6 +63,16 @@ async def run_walk_forward(
             test_days=request.test_days,
             step_days=request.step_days,
             mode=request.mode,
+            sizer=request.sizer,
+            max_position_pct=request.max_position_pct,
+            target_vol=request.target_vol,
+            max_gross_leverage=request.max_gross_leverage,
+            max_drawdown_halt=request.max_drawdown_halt,
+            enable_risk_gate=request.enable_risk_gate,
+            stop_loss_pct=request.stop_loss_pct,
+            take_profit_pct=request.take_profit_pct,
+            time_stop_days=request.time_stop_days,
+            resize_signals=request.resize_signals,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e

@@ -39,6 +39,8 @@ function mapCompleteResults(r: Record<string, unknown>): BacktestResults {
     metrics,
     equity_curve: r.equity_curve as Array<Record<string, unknown>> | undefined,
     benchmark_equity_curve: r.benchmark_equity_curve as Array<Record<string, unknown>> | undefined,
+    underwater_curve: r.underwater_curve as Array<{ date: string; drawdown: number }> | undefined,
+    rejected_trades: r.rejected_trades as Array<Record<string, unknown>> | undefined,
   };
 }
 

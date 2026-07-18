@@ -1142,10 +1142,10 @@ When completing a phase step, update:
 [x] 1.4 Walk-forward splits + runner
 [x] 1.5 Experiment store
 [x] 1.6 CLI
-[ ] 2.1 Sizers
-[ ] 2.2 RiskGate
-[ ] 2.3 Engine stops
-[ ] 2.4 CVaR / underwater metrics
+[x] 2.1 Sizers
+[x] 2.2 RiskGate
+[x] 2.3 Engine stops
+[x] 2.4 CVaR / underwater metrics
 [ ] 3.1 Instrument model
 [ ] 3.2 Ccxt provider (mocked tests)
 [ ] 3.3 bars_per_year

@@ -36,6 +36,7 @@ class BacktestResults:
         daily_snapshots: list[dict],
         executed_trades: list[Trade],
         portfolio: Portfolio,
+        rejected_trades: list | None = None,
     ):
         """
         Initialize backtest results.
@@ -58,9 +59,11 @@ class BacktestResults:
         self.daily_snapshots = daily_snapshots
         self.executed_trades = executed_trades
         self.portfolio = portfolio
+        self.rejected_trades = rejected_trades or []
         
         # Calculate metrics
         self._metrics: Optional[dict] = None
+        self._underwater_curve: Optional[list] = None
     
     @property
     def metrics(self) -> dict:
@@ -73,6 +76,20 @@ class BacktestResults:
     def equity_curve(self) -> pd.DataFrame:
         """Get equity curve as DataFrame."""
         return pd.DataFrame(self.daily_snapshots)
+
+    @property
+    def underwater_curve(self) -> list[dict]:
+        """Drawdown path for UI charts."""
+        if self._underwater_curve is None:
+            from quant_lab.backtesting.metrics import underwater_series
+            values = [snap["total_value"] for snap in self.daily_snapshots]
+            dds = underwater_series(values)
+            self._underwater_curve = [
+                {"date": snap["date"], "drawdown": dd}
+                for snap, dd in zip(self.daily_snapshots, dds)
+            ]
+        return self._underwater_curve
+
     
     @property
     def trade_history(self) -> pd.DataFrame:

@@ -86,3 +86,13 @@ python -m quant_lab.cli backtest --strategy multi_factor --tickers AAPL,MSFT \
   --start 2024-01-02 --end 2024-02-29 --provider csv \
   --data-dir packages/core/tests/fixtures/sample_prices
 ```
+
+
+## Phase 2 risk controls
+
+Backtest body may include:
+
+- `sizer`: `percent` | `vol_target` | `equal_weight`
+- `max_position_pct`, `max_gross_leverage`, `max_drawdown_halt`, `enable_risk_gate`
+- `stop_loss_pct`, `take_profit_pct`, `time_stop_days`
+- Results metrics: `var_95`, `cvar_95`, plus `underwater_curve`

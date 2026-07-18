@@ -2,6 +2,7 @@ import { useState } from 'react';
 import BacktestForm from './components/BacktestForm';
 import EquityCurve from './components/EquityCurve';
 import MetricsCard from './components/MetricsCard';
+import UnderwaterChart from './components/UnderwaterChart';
 import WalkForwardForm from './components/WalkForwardForm';
 import WalkForwardResults from './components/WalkForwardResults';
 import ExperimentsList from './components/ExperimentsList';
@@ -115,7 +116,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-gray-900">Quant Factory</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Algorithmic Trading Backtesting Platform — Phase 1 research tools
+            Algorithmic Trading Backtesting Platform — Phase 2 risk & portfolio controls
           </p>
           <div className="mt-4 flex gap-2">
             {tabBtn('backtest', 'Backtest')}
@@ -151,6 +152,7 @@ export default function App() {
             </div>
             <div className="lg:col-span-2 space-y-6">
               <EquityCurve data={equityCurveData} isRunning={isRunning} />
+              <UnderwaterChart data={results?.underwater_curve?.map((u) => ({ date: String(u.date), drawdown: Number(u.drawdown) })) ?? []} />
               <MetricsCard results={results} />
             </div>
           </div>
@@ -172,7 +174,7 @@ export default function App() {
 
       <footer className="bg-white border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
-          Quant Factory v0.1.0 — Phase 1 research-grade backtesting
+          Quant Factory v0.1.0 — Phase 2 portfolio construction & risk
         </div>
       </footer>
     </div>

@@ -78,6 +78,20 @@ export default function MetricsCard({ results }: MetricsCardProps) {
         : 'N/A',
       color: 'text-gray-900',
     },
+    {
+      label: 'VaR 95%',
+      value: results.metrics?.var_95 != null
+        ? `${(Number(results.metrics.var_95) * 100).toFixed(2)}%`
+        : 'N/A',
+      color: 'text-red-600',
+    },
+    {
+      label: 'CVaR 95%',
+      value: results.metrics?.cvar_95 != null
+        ? `${(Number(results.metrics.cvar_95) * 100).toFixed(2)}%`
+        : 'N/A',
+      color: 'text-red-600',
+    },
   ];
 
   return (
